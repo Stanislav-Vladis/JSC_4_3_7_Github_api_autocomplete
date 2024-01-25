@@ -19,14 +19,14 @@ export const GithubApiServiceWrapper = (() => {
         DEBOUNCE_TIME
       );
 
-      const repositories = new Map();
+      const repositories = {};
       rawRepositories.items?.forEach(item => {
-        repositories.set(item.id, {
+        repositories[item.id] = {
           id: item.id,
           name: item.name,
           owner: item.owner.login,
           stars: item.stargazers_count
-        });
+        };
       });
       return repositories;
     }

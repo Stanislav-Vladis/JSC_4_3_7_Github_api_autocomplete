@@ -1,9 +1,12 @@
 import { GithubApiServiceWrapper } from './GithubApiService.js';
 
 const githubApiServiceWrapper = new GithubApiServiceWrapper();
-const repositorySearchInput = document.getElementById('repository-search');
+
 const searchContainer = document.querySelector('.search');
-let foundRepositories = new Map();
+const repositorySearchInput = searchContainer.querySelector('#repository-search');
+const selectionScope = searchContainer.querySelector('.search__selection-scope');
+const repositorySearchResultList = searchContainer.querySelector('.search__repository-search-result-list');
+let foundRepositories = {};
 
 repositorySearchInput.addEventListener('input', doSearch);
 
@@ -12,20 +15,20 @@ searchContainer.addEventListener('click', function (event) {
   processElemDeletionEvent(event.target);
 });
 
-function doSearch() {
-  githubApiServiceWrapper.getRepositoriesByName(repositorySearchInput.value, 5).then(repositories => {
+function doSearch(event) {
+  const inputTargetElement = event.target;
+  githubApiServiceWrapper.getRepositoriesByName(inputTargetElement.value, 5).then(repositories => {
     foundRepositories = repositories;
     addRepositorySearchResult(foundRepositories);
   });
 }
 
 function addRepositorySearchResult(foundRepositories) {
-  const repositorySearchResultList = document.querySelector('.search__repository-search-result-list');
   const fragment = document.createDocumentFragment();
 
   clearElement(repositorySearchResultList);
-  if (foundRepositories.size > 0) {
-    foundRepositories.forEach(repository => {
+  if (Object.keys(foundRepositories).length > 0) {
+    Object.values(foundRepositories).forEach(repository => {
       const li = document.createElement('li');
       li.id = repository.id;
       li.classList.add('search__repository-search-result');
@@ -39,7 +42,6 @@ function addRepositorySearchResult(foundRepositories) {
 }
 
 function addSelectItem(repository) {
-  const selectionScope = document.querySelector('.search__selection-scope');
   const fragment = document.createDocumentFragment();
 
   function buildSelectItemBlock() {
@@ -48,11 +50,11 @@ function addSelectItem(repository) {
       infoBlock.classList.add('search__item-info');
 
       const nameRepository = document.createElement('p');
-      nameRepository.textContent = 'Name: '.concat(repository.name);
+      nameRepository.textContent = `Name: ${repository.name}`;
       const ownerRepository = document.createElement('p');
-      ownerRepository.textContent = 'Owner: '.concat(repository.owner);
+      ownerRepository.textContent = `Owner: ${repository.owner}`;
       const starsRepository = document.createElement('p');
-      starsRepository.textContent = 'Stars: '.concat(repository.stars);
+      starsRepository.textContent = `Stars: ${repository.stars}`;
 
       infoBlock.appendChild(nameRepository);
       infoBlock.appendChild(ownerRepository);
@@ -82,7 +84,7 @@ function addSelectItem(repository) {
 
   const selectItemBlock = buildSelectItemBlock();
   fragment.appendChild(selectItemBlock);
-  selectionScope.insertBefore(fragment, selectionScope.firstChild);
+  selectionScope.prepend(fragment);
 }
 
 function clearElement(elem) {
@@ -91,8 +93,7 @@ function clearElement(elem) {
   }
 }
 
-function clearInput(elementId) {
-  const inputElement = document.getElementById(elementId);
+function clearInput(inputElement) {
   inputElement.value = '';
 }
 
@@ -100,11 +101,11 @@ function processElemAddingEvent(eventTarget) {
   const repositorySearchResult = eventTarget.closest('.search__repository-search-result');
   if (repositorySearchResult) {
     const key = Number(repositorySearchResult.id);
-    if (foundRepositories.has(key)) {
-      const repository = foundRepositories.get(key);
+    if (foundRepositories.hasOwnProperty(key)) {
+      const repository = foundRepositories[key];
       addSelectItem(repository);
-      clearInput('repository-search');
-      clearElement(document.querySelector('.search__repository-search-result-list'));
+      clearInput(repositorySearchInput);
+      clearElement(repositorySearchResultList);
     }
   }
 }
